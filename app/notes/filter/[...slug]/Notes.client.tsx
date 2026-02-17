@@ -3,33 +3,39 @@
 import { useState } from "react";
 import { useQuery, keepPreviousData } from "@tanstack/react-query";
 import { useDebounce } from "use-debounce";
-import { useParams } from "next/navigation";
+import { Toaster } from "react-hot-toast";
 import { fetchNotes } from "@/lib/api";
 import NoteList from "@/components/NoteList/NoteList";
 import SearchBox from "@/components/SearchBox/SearchBox";
+import NoteForm from "@/components/NoteForm/NoteForm";
+import NoteModal from "@/components/Modal/Modal";
 import Pagination from "@/components/Pagination/Pagination";
 import css from "./NotesPage.module.css"; 
 
-export default function NotesClient() {
-  const { slug } = useParams();
+interface NotesClientProps {
+  tag?: string;
+}
+
+export default function NotesClient({ tag }: NotesClientProps) {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
-
-  const category = slug?.[0] === 'all' ? undefined : slug?.[0];
-    
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [debouncedSearch] = useDebounce(search, 300);
 
   const { data } = useQuery({
-    queryKey: ["notes", debouncedSearch, page, category],
-    queryFn: () => fetchNotes(debouncedSearch, page, category),
+    queryKey: ["notes", debouncedSearch, page, tag],
+    queryFn: () => fetchNotes(debouncedSearch, page, tag),
     placeholderData: keepPreviousData,
-    refetchOnMount: false,
   });
 
   const totalPages = data?.totalPages ?? 0;
 
+  const openModal = () => setIsModalOpen(true);
+  const closeModal = () => setIsModalOpen(false);
+    
   return (
     <div className={css.app}>
+      <Toaster />    
       <header className={css.toolbar}>
         <SearchBox 
           value={search} 
@@ -38,6 +44,11 @@ export default function NotesClient() {
             setPage(1); 
           }} 
         />
+        
+        <button className={css.button} onClick={openModal}>
+          Create note +
+        </button>
+
         {totalPages > 1 && (
           <Pagination
             pageCount={totalPages}        
@@ -51,9 +62,15 @@ export default function NotesClient() {
         {data && data.notes.length > 0 ? (
           <NoteList notes={data.notes} />
         ) : (
-          <p>No notes found for category: {category || 'all'}</p>
+          <p>No notes found for tag: {tag || 'all'}</p>
         )}
       </main>
+      
+      {isModalOpen && (
+        <NoteModal onClose={closeModal}>
+          <NoteForm onClose={closeModal} />
+        </NoteModal>
+      )} 
     </div>
   );
 }
