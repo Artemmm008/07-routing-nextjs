@@ -1,24 +1,20 @@
 'use client';
 
-import { useQuery } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { Note } from "@/types/note";
 import css from "./NotePreview.module.css";
-import { fetchNoteById } from "@/lib/api";
-import { useParams, useRouter } from "next/navigation";
 
-const NotePreview = () => {
-  const { id } = useParams();
+type Props = {
+  note: Note;
+};
 
+const NotePreview = ({ note }: Props) => {
   const router = useRouter();
-  
-  const close = () => router.back();
-  
-  const { data: note } = useQuery({
-    queryKey: ["note", id],
-    queryFn: () => fetchNoteById(id as string)
-  })
-  
-  if (!note) return null;
-  
+
+  const handleClose = () => {
+    router.back();
+  }
+
   return (
     <div className={css.container}>
       <div className={css.item}>
@@ -31,12 +27,9 @@ const NotePreview = () => {
           {new Date(note.createdAt).toLocaleDateString('uk-UA')}
         </p>
       </div>
-      <button className={css.backBtn} onClick={close}>Close</button>
+      <button className={css.backBtn} onClick={handleClose}>Close</button>
     </div>
   );
 };
-
+  
 export default NotePreview;
-
-
-
